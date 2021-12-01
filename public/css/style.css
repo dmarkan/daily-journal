@@ -13,6 +13,16 @@
     letter-spacing: 5px;
 }
 
+li a {
+    text-decoration: none;
+    padding-left: 10px;
+    color: grey;
+}
+
+label {
+    font-weight: bold;
+}
+
 .navbar-nav li a:hover {
     color: #1abc9c !important;
 }
