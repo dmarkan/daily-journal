@@ -2,9 +2,14 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const lodash = require('lodash');
+const mongoose = require("mongoose");
+const res = require("express/lib/response");
 
 const app = express();
-const posts = [];
+
+mongoose.connect("mongodb+srv://darko:darmar1986@cluster0.62x42.mongodb.net/blogDB?retryWrites=true&w=majority", function(err) {
+    // If no error, successfully connected
+  });
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.static("public"));
@@ -13,12 +18,21 @@ const homeStartingContent = "Lorem ipsum dolor sit amet consectetur, adipisicing
 const aboutContent = "Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde fuga facilis accusantium, sed sunt provident sapiente fugiat optio magni officiis, voluptate mollitia animi et ratione repellendus repellat, at autem quas!";
 const contactContent = "Lorem ipsum dolor sit amet consectetur, adipisicing elit. Labore velit quis laborum adipisci animi natus fuga molestias ratione sit nulla minus officia pariatur similique ex, mollitia et facere laudantium est.";
 
+const postSchema = {
+    title: String,
+    content: String
+};
+
+const Post = mongoose.model("Post", postSchema);
+
 app.set('view engine', 'ejs');
 
 app.get("/", function (req, res) {
-    res.render("home.ejs", {
-        homeStartingContent: homeStartingContent,
-        posts: posts
+    Post.find({}, function (err, posts) {
+        res.render("home", {
+            startingContent: homeStartingContent,
+            posts: posts
+        });
     });
 })
 
@@ -38,27 +52,34 @@ app.get("/compose", function (req, res) {
     res.render("compose.ejs")
 })
 
-app.get("/posts/:post", function (req, res) {
-    const requestedTitle = req.params.post;
-    posts.forEach(post => {
-        const storedTitle = post.title;
-        if (requestedTitle.toLower === storedTitle.toLower) { //za toLower koristimo lodash
-            res.render("post.ejs", {
-                title: post.title,
-                content: post.content
-            })
-        }
+app.get("/posts/:postId", function (req, res) {
+    const requestedPostId = req.params.postId;
+    Post.findOne({_id:requestedPostId}, function (err, post) {
+        res.render("post", {
+            title: post.title,
+            content: post.content
+        });
     });
-})
+       
+
+});
 
 app.post("/compose", function (req, res) {
-    const post = {
+    const post = new Post ({
         title: req.body.postTitle,
         content: req.body.postBody
-    }
-   posts.push(post);
+    })
+   post.save(function (err) {
+       if (err) {
+           console.log(err);
+       } else {
+           res.redirect("/");
+       }
+   });
    res.redirect("/");
-})
+});
+
+
 
 
 app.listen(3000, function () {
